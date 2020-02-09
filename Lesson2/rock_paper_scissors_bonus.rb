@@ -3,7 +3,7 @@ VALID_CHOICES_ABBREV = {
   "p" => "paper",
   "sc" => "scissors",
   "l" => "lizard",
-  "sp" => "spock",
+  "sp" => "spock"
 }
 
 WINNER_ROUND_AMOUNT = 5
@@ -90,7 +90,7 @@ loop do
   user_choice = nil
   loop do
     prompt <<-WELCOME
-    
+
     Choose one: #{VALID_CHOICES_ABBREV.values.join(', ')}.
     You can also type the first letter of the option,
     and "sc" for scissors or "sp" for spock.
