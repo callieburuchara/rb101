@@ -1,11 +1,9 @@
-VALID_CHOICES = ["rock", "paper", "scissors", "lizard", "spock"]
-
-ABBREVIATIONS = {
+VALID_CHOICES_ABBREV = {
   "r" => "rock",
   "p" => "paper",
   "sc" => "scissors",
   "l" => "lizard",
-  "sp" => "spock"
+  "sp" => "spock",
 }
 
 WINNER_ROUND_AMOUNT = 5
@@ -26,7 +24,7 @@ rpsls_game_logic = {
   "spock" => ["rock", "scissors"]
 }
 
-def display_who_win?(game_logic, user, computer)
+def display_winner(game_logic, user, computer)
   if game_logic[user].include?(computer)
     prompt("You won!")
   elsif game_logic[computer].include?(user)
@@ -52,21 +50,36 @@ def display_win_counter(user_score, computer_score)
   puts "-----------------------------------------------------"
 end
 
-def determine_grand_winner(score_hash)
+def determine_display_grand_winner(score_hash)
   if score_hash[:player] == WINNER_ROUND_AMOUNT
     prompt("That's a full match! And...")
     sleep 2
     prompt("You are the ultimater winner!")
     sleep 2
-    score_hash[:player] = 0
-    score_hash[:computer] = 0
   elsif score_hash[:computer] == WINNER_ROUND_AMOUNT
     prompt("That's a full match! And...")
     sleep 2
     prompt("You are..! The ultimate loser. Alas.")
     sleep 2
-    score_hash[:player] = 0
-    score_hash[:computer] = 0
+  end
+end
+
+def reset_scores(score_hash)
+  score_hash[:player] = 0
+  score_hash[:computer] = 0
+end
+
+def play_again?
+  loop do
+    prompt("Do you want to play again? Type Y/Yes or N/No.")
+    answer = gets.chomp.downcase
+    if answer == "n" || answer == "no"
+      return
+    elsif answer == "y" || answer == "yes"
+      return true
+    else
+      prompt("Sorry, what was that? Say Y/Yes, N/No please.")
+    end
   end
 end
 
@@ -76,43 +89,40 @@ loop do
 
   user_choice = nil
   loop do
-    prompt("Choose one: #{VALID_CHOICES.join(', ')}")
+    prompt <<-WELCOME
+    
+    Choose one: #{VALID_CHOICES_ABBREV.values.join(', ')}.
+    You can also type the first letter of the option,
+    and "sc" for scissors or "sp" for spock.
+    WELCOME
     user_choice = gets.chomp.downcase
 
-    if VALID_CHOICES.include?(user_choice)
+    if VALID_CHOICES_ABBREV.values.include?(user_choice)
       break
-    elsif ABBREVIATIONS.key?(user_choice)
-      user_choice = ABBREVIATIONS[user_choice]
+    elsif VALID_CHOICES_ABBREV.key?(user_choice)
+      user_choice = VALID_CHOICES_ABBREV[user_choice]
       break
     else
-      prompt("That's not a valid choice. Please type the name,
-        the first letter, or 'sc' for scissors or 'sp' for spock.")
+      prompt("That's not a valid choice. Please try again.")
     end
     user_choice
   end
 
-  computer_choice = VALID_CHOICES.sample
+  computer_choice = VALID_CHOICES_ABBREV.values.sample
 
   prompt("You chose #{user_choice}; Computer chose #{computer_choice}.")
 
-  display_who_win?(rpsls_game_logic, user_choice, computer_choice)
+  display_winner(rpsls_game_logic, user_choice, computer_choice)
 
   update_scores(rpsls_game_logic, user_choice, computer_choice, overall_scores)
 
   display_win_counter(overall_scores[:player], overall_scores[:computer])
 
-  determine_grand_winner(overall_scores)
+  determine_display_grand_winner(overall_scores)
 
-  loop do
-    prompt("Do you want to play again?")
-    answer = gets.chomp.downcase
-    if answer == "n" || answer == "no"
-      prompt("Thank you for playing! Buh-bye!")
-      return
-    elsif answer == "y" || answer == "yes"
-      break
-    else
-      prompt("Sorry, what was that? Say Y/Yes, N/No please.")
-    end
-  end
+  reset_scores(overall_scores)
+
+  break unless play_again?
 end
+
+prompt("Thank you for playing! Buh-bye!")
