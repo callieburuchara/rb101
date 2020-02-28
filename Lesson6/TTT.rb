@@ -1,15 +1,12 @@
-require "pry"
-require "pry-byebug"
-
 INITIAL_MARKER = ' '
 PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
 WINNER_ROUND_AMOUNT = 5
 FIRST_PLAYER = "choose"
 
-WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
-                [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
-                [[1, 5, 9], [3, 5, 7]]              # diagonals
+WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] +
+                [[1, 4, 7], [2, 5, 8], [3, 6, 9]] +
+                [[1, 5, 9], [3, 5, 7]]
 
 def prompt(msg)
   puts "==> #{msg}"
@@ -46,55 +43,38 @@ def empty_squares(brd)
 end
 
 def joinor(array, separator = ", ", ending = "or")
- case array.size
- when 0 then ''
- when 1 then array.first
- when 2 then array.join(" #{ending} ")
- else
-  array[-1] = "#{ending} #{array.last}"
-  array.join(separator)
- end
+  case array.size
+  when 0 then ''
+  when 1 then array.first
+  when 2 then array.join(" #{ending} ")
+  else
+    array[-1] = "#{ending} #{array.last}"
+    array.join(separator)
+  end
 end
 
 def player_places_piece!(brd)
   square = ''
-  
+
   loop do
     prompt "Choose a square: #{joinor(empty_squares(brd))}"
     square = gets.chomp.to_i
     break if empty_squares(brd).include?(square)
     prompt "Sorry, that's not a valid choice."
   end
-  
+
   brd[square] = PLAYER_MARKER
 end
 
 def computer_places_piece!(brd)
   prompt "Computer's turn..."
   sleep 1
-  
+
   square = nil
-  
-  #offense
-  WINNING_LINES.each do |line|
-    square = find_at_risk_square(line, brd, COMPUTER_MARKER)
-    break if square
-  end
+  square = computer_offense(brd, square) ||
+           computer_defense(brd, square) ||
+           mark_five(brd, square)
 
-  #defense
-  if !square
-    WINNING_LINES.each do |line|
-      square = find_at_risk_square(line, brd, PLAYER_MARKER)
-      break if square
-    end
-  end
-
-  #pick 5 if possible
-  if !square
-    square = 5 if brd[5] == ' '
-  end
-    
-  #random selection
   if !square
     square = empty_squares(brd).sample
   end
@@ -102,11 +82,31 @@ def computer_places_piece!(brd)
   brd[square] = COMPUTER_MARKER
 end
 
+def computer_offense(brd, square)
+  WINNING_LINES.each do |line|
+    square = find_at_risk_square(line, brd, COMPUTER_MARKER)
+    break if square
+  end
+  square
+end
+
+def computer_defense(brd, square)
+  if !square
+    WINNING_LINES.each do |line|
+      square = find_at_risk_square(line, brd, PLAYER_MARKER)
+      break if square
+    end
+  end
+  square
+end
+
+def mark_five(brd, _square)
+  _square = 5 if brd[5] == ' '
+end
+
 def find_at_risk_square(line, brd, marker)
   if brd.values_at(*line).count(marker) == 2
-    brd.select{|k, v| line.include?(k) && v == INITIAL_MARKER}.keys.first
-  else
-    nil
+    brd.select { |k, v| line.include?(k) && v == INITIAL_MARKER }.keys.first
   end
 end
 
@@ -126,7 +126,7 @@ def detect_winner(brd)
 end
 
 def someone_won?(brd)
-  !!detect_winner(brd) # turning a string or nil into a boolean value
+  !!detect_winner(brd)
 end
 
 overall_scores = { player: 0, computer: 0 }
@@ -136,7 +136,6 @@ def update_scores(score_hash, brd)
     score_hash[:player] += 1
   elsif detect_winner(brd) == 'Computer'
     score_hash[:computer] += 1
-  else
   end
 end
 
@@ -175,13 +174,12 @@ def who_first
   end
 end
 
-
 def ask_choice_first_player
-  prompt "Who would you like to go first? Type 'p' for player " +
-          "(yourself) or 'c' for computer."
-    
+  prompt "Who would you like to go first? Type 'p' for player " \
+         "(yourself) or 'c' for computer."
+
   loop do
-      preference = gets.chomp.downcase
+    preference = gets.chomp.downcase
 
     if preference == 'p'
       break 'player'
@@ -190,22 +188,6 @@ def ask_choice_first_player
     else
       prompt "Sorry, not a valid choice. Type 'p' or 'c'."
     end
-  end
-end
-
-def first_player_goes(brd, choice)
-  if choice == 'player'
-    player_places_piece!(brd)
-  else
-    computer_places_piece!(brd)
-  end
-end
-
-def second_player_goes(brd, choice)
-  if choice == 'computer'
-    player_places_piece!(brd)
-  else
-    computer_places_piece!(brd)
   end
 end
 
@@ -223,23 +205,28 @@ def play_again?
   end
 end
 
+def place_piece!(brd, current)
+  if current == "player"
+    player_places_piece!(brd)
+  else
+    computer_places_piece!(brd)
+  end
+end
+
+def alternate_player(current)
+  current == "player" ? 'computer' : 'player'
+end
 
 # ACTUAL GAME BEGINNING
 loop do
-
   board = initialize_board
 
-  choice = who_first
+  current_player = who_first
 
   loop do
     display_board(board)
-
-    first_player_goes(board, choice)
-    break if someone_won?(board) || board_full?(board)
-
-    display_board(board)
-
-    second_player_goes(board, choice) 
+    place_piece!(board, current_player)
+    current_player = alternate_player(current_player)
     break if someone_won?(board) || board_full?(board)
   end
 
