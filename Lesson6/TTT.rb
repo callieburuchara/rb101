@@ -1,9 +1,11 @@
 require "pry"
+require "pry-byebug"
 
 INITIAL_MARKER = ' '
 PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
 WINNER_ROUND_AMOUNT = 5
+FIRST_PLAYER = "choose"
 
 WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                 [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
@@ -63,12 +65,14 @@ def player_places_piece!(brd)
     break if empty_squares(brd).include?(square)
     prompt "Sorry, that's not a valid choice."
   end
-  prompt "Computer's turn..."
-  sleep 1
+  
   brd[square] = PLAYER_MARKER
 end
 
 def computer_places_piece!(brd)
+  prompt "Computer's turn..."
+  sleep 1
+  
   square = nil
   
   #offense
@@ -161,16 +165,81 @@ def determine_display_grand_winner(score_hash)
   end
 end
 
+def who_first
+  if FIRST_PLAYER == 'choose'
+    ask_choice_first_player
+  elsif FIRST_PLAYER == 'player'
+    'player'
+  elsif FIRST_PLAYER == 'computer'
+    'computer'
+  end
+end
+
+
+def ask_choice_first_player
+  prompt "Who would you like to go first? Type 'p' for player " +
+          "(yourself) or 'c' for computer."
+    
+  loop do
+      preference = gets.chomp.downcase
+
+    if preference == 'p'
+      break 'player'
+    elsif preference == 'c'
+      break 'computer'
+    else
+      prompt "Sorry, not a valid choice. Type 'p' or 'c'."
+    end
+  end
+end
+
+def first_player_goes(brd, choice)
+  if choice == 'player'
+    player_places_piece!(brd)
+  else
+    computer_places_piece!(brd)
+  end
+end
+
+def second_player_goes(brd, choice)
+  if choice == 'computer'
+    player_places_piece!(brd)
+  else
+    computer_places_piece!(brd)
+  end
+end
+
+def play_again?
+  loop do
+    prompt("Do you want to play again? Type Y/Yes or N/No.")
+    answer = gets.chomp.downcase
+    if answer == "n" || answer == "no"
+      return
+    elsif answer == "y" || answer == "yes"
+      return true
+    else
+      prompt("Sorry, what was that? Say Y/Yes, N/No please.")
+    end
+  end
+end
+
+
+# ACTUAL GAME BEGINNING
 loop do
+
   board = initialize_board
+
+  choice = who_first
 
   loop do
     display_board(board)
 
-    player_places_piece!(board)
+    first_player_goes(board, choice)
     break if someone_won?(board) || board_full?(board)
 
-    computer_places_piece!(board)
+    display_board(board)
+
+    second_player_goes(board, choice) 
     break if someone_won?(board) || board_full?(board)
   end
 
@@ -189,9 +258,7 @@ loop do
 
   reset_scores(overall_scores) if overall_scores.values.include?(5)
 
-  prompt 'Play again? (y or n)'
-  answer = gets.chomp
-  break unless answer.downcase.start_with?('y')
+  break unless play_again?
 end
 
 prompt "Thanks for playing Tic Tac Toe! Buh-bye!"
