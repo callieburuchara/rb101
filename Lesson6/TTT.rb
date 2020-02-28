@@ -3,10 +3,11 @@ require "pry"
 INITIAL_MARKER = ' '
 PLAYER_MARKER = 'X'
 COMPUTER_MARKER = 'O'
+WINNER_ROUND_AMOUNT = 5
+
 WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                 [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                 [[1, 5, 9], [3, 5, 7]]              # diagonals
-WINNER_ROUND_AMOUNT = 5
 
 def prompt(msg)
   puts "==> #{msg}"
@@ -55,12 +56,15 @@ end
 
 def player_places_piece!(brd)
   square = ''
+  
   loop do
     prompt "Choose a square: #{joinor(empty_squares(brd))}"
     square = gets.chomp.to_i
     break if empty_squares(brd).include?(square)
     prompt "Sorry, that's not a valid choice."
   end
+  prompt "Computer's turn..."
+  sleep 1
   brd[square] = PLAYER_MARKER
 end
 
