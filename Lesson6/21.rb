@@ -60,7 +60,7 @@ def hit!(cards)
   cards << DECK.sample
 end
 
-def total(cards) # fix this here
+def total(cards) 
   values = cards.map {|card| card[0]}
 
   sum = 0
