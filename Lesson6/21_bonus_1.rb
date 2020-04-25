@@ -1,6 +1,3 @@
-require 'pry'
-require 'pry-byebug'
-
 SUITS = ['H', 'D', 'S', 'C']
 VALUES = %w(2 3 4 5 6 7 8 9 10 J Q K A)
 DECK = VALUES.product(SUITS).shuffle
@@ -61,65 +58,62 @@ def total(cards) # fix this here
   sum
 end
 
-player_total = total(players_cards)
-dealer_total = total(dealers_cards)
-
-def busted?(card_total)
-  card_total > 21
+def busted?(cards)
+  total(cards) > 21
 end
 
 # rubocop:disable Metrics/MethodLength
-def player_turn(player, dealer, ptotal)
+def player_turn(player, dealer)
   answer = nil
   loop do
     prompt "Would you like to hit or stay?"
     answer = gets.chomp
     hit!(player) if answer == "hit"
-    ptotal = total(player) # update total
-    break if answer == "stay" || busted?(ptotal)
+    break if answer == "stay" || busted?(player)
     display_current_cards(player, dealer)
   end
 
-  if busted?(ptotal)
+  if busted?(player)
     display_current_cards(player, dealer)
     sleep 1
     prompt "You busted!"
     sleep 1
     "busted"
   else
-    prompt "You chose to stay at #{player}!"
+    prompt "You chose to stay at #{total(player)}!"
     "stay"
   end
 end
 # rubocop:enable Metrics/MethodLength
 
-def dealer_turn(dealer, dtotal)
+def dealer_turn(_player, dealer)
   loop do
-    break if dtotal >= 17 || busted?(dtotal)
+    break if total(dealer) >= 17 || busted?(dealer)
     prompt "Dealer has to hit!"
+
     hit!(dealer)
-    dtotal = total(dealer) # update total
+
     sleep 1
   end
 
-  if busted?(dtotal)
+  if busted?(dealer)
     prompt "The dealer busted!"
     sleep 1
     "busted"
   else
-    prompt "Dealer chose to stay at #{dealer}!"
+    prompt "Dealer chose to stay at #{total(dealer)}!"
     "stay"
   end
 end
 
-def calculate_winner(ptotal, dtotal)
-  if busted?(ptotal)
+def calculate_winner(player, dealer)
+  if busted?(player)
     "dealer"
-  elsif ptotal > dtotal
+  elsif total(player) > total(dealer)
     "player"
-  elsif twenty_one?(ptotal)
+  elsif twenty_one?(player)
     "player"
-  elsif busted?(dtotal)
+  elsif busted?(dealer)
     "player"
   else
     "dealer"
@@ -127,10 +121,10 @@ def calculate_winner(ptotal, dtotal)
 end
 
 def twenty_one?(cards)
-  cards == 21
+  total(cards) == 21
 end
 
-def display_winner(player, dealer, ptotal, dtotal)
+def display_winner(player, dealer)
   if calculate_winner(player, dealer) == "player"
     prompt "WOOHOO! YOU WON!"
     sleep 1
@@ -141,14 +135,14 @@ def display_winner(player, dealer, ptotal, dtotal)
     prompt "It's a tie!"
   end
 
-  display_final_cards(player, dealer, ptotal, dtotal)
+  display_final_cards(player, dealer)
 end
 
-def display_final_cards(player, dealer, ptotal, dtotal)
+def display_final_cards(player, dealer)
   prompt "The dealer had " + joinor(current_cards(dealer)) +
-         " for a total of #{dtotal}."
+         " for a total of #{total(dealer)}."
   prompt "You had " + joinor(current_cards(player)) +
-         " for a total of #{ptotal}."
+         " for a total of #{total(player)}."
 end
 
 def play_again?
@@ -186,23 +180,23 @@ loop do
     display_current_cards(players_cards, dealers_cards)
     sleep 1
 
-    player_turn(players_cards, dealers_cards, player_total)
-    break if busted?(player_total) || twenty_one?(player_total)
+    player_turn(players_cards, dealers_cards)
+    break if busted?(players_cards) || twenty_one?(players_cards)
     sleep 1
 
     system 'clear'
 
-    dealer_turn(dealers_cards, dealer_total)
-    break if busted?(dealer_total) || twenty_one?(dealer_total)
+    dealer_turn(players_cards, dealers_cards)
+    break if busted?(dealers_cards) || twenty_one?(dealers_cards)
     sleep 1
-binding.pry
-    break if !calculate_winner(player_total, dealer_total).nil?
+
+    break if !calculate_winner(players_cards, dealers_cards).nil?
     break if player_turn(players_cards, dealers_cards).include?("stay")
-    break if dealer_turn(player_total, dealer_total).include?("stay")
+    break if dealer_turn(players_cards, dealers_cards).include?("stay")
   end
 
-  calculate_winner(player_total, dealer_total)
-  display_winner(players_cards, dealers_cards, player_total, dealer_total)
+  calculate_winner(players_cards, dealers_cards)
+  display_winner(players_cards, dealers_cards)
   reset_decks(players_cards, dealers_cards)
 
   break unless play_again?
